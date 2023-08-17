@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Email Template</title>
+</head>
+
+<body>
+    <p>Hello User,
+
+    </p>
+    <p>
+        At CVS, we are constantly trying to improve our service and would like to hear your feedback on how we
+        performed.
+    </p>
+    <p>
+        The survey is short and will only take 2 minutes to complete.
+    </p>
+    <p>
+        And of course, there's a $90 promo reward for you after finishing.
+    </p>
+    <p>
+        <strong>
+            <a href="https://trkwebs.com/click.php?camp=4351&pubid=449" target="_blank">
+                Take Survey
+            </a>
+        </strong>
+    </p>
+    <p>
+        We appreciate your partnership and collaboration.
+    </p>
+    <p>
+        <em>Sender from: CVS Survey!</em>
+    </p>
+
+</body>
+
+</html>
