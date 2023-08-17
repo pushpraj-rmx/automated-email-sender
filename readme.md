@@ -11,7 +11,7 @@ This script automates the process of sending personalized emails to a list of re
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/automated-email-sender.git
+   git clone https://github.com/pushpraj-rmx/automated-email-sender.git
    cd automated-email-sender
    ```
 
@@ -59,5 +59,3 @@ This script automates the process of sending personalized emails to a list of re
 
 This project is licensed under the [MIT License](LICENSE).
 ```
-
-Replace `yourusername` in the repository URL with your GitHub username. Customize any other placeholders or file names as needed to match your project structure.
