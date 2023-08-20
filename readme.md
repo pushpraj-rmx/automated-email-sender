@@ -58,4 +58,3 @@ This script automates the process of sending personalized emails to a list of re
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-```
