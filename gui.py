@@ -1,45 +1,42 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox, scrolledtext
 import pandas as pd
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
-import tkinter as tk
-from tkinter import filedialog, messagebox
 
 class EmailSenderApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Email Sender App")
 
+        # Create a frame for the left side
+        self.left_frame = tk.Frame(root)
+        self.left_frame.pack(side="left", padx=20, pady=20)
+
+        # Create a frame for the right side (log display)
+        self.right_frame = tk.Frame(root)
+        self.right_frame.pack(side="right", padx=20, pady=20)
+
         # Create labels
-        self.contacts_label = tk.Label(root, text="Select Contacts CSV:")
-        self.gmail_label = tk.Label(root, text="Select Gmail CSV:")
-        self.subject_label = tk.Label(root, text="Select Subject CSV:")
-        self.template_label = tk.Label(root, text="Select Email Template HTML:")
+        tk.Label(self.left_frame, text="Select Contacts CSV:").grid(row=0, column=0, sticky="w")
+        tk.Label(self.left_frame, text="Select Gmail CSV:").grid(row=1, column=0, sticky="w")
+        tk.Label(self.left_frame, text="Select Subject CSV:").grid(row=2, column=0, sticky="w")
+        tk.Label(self.left_frame, text="Select Email Template HTML:").grid(row=3, column=0, sticky="w")
 
         # Create buttons to select CSV files
-        self.contacts_button = tk.Button(root, text="Browse", command=self.browse_contacts)
-        self.gmail_button = tk.Button(root, text="Browse", command=self.browse_gmail)
-        self.subject_button = tk.Button(root, text="Browse", command=self.browse_subject)
-        self.template_button = tk.Button(root, text="Browse", command=self.browse_template)
+        self.create_button("Browse", self.browse_contacts, 0, 2, "e", padx=(10, 0), pady=(10, 0))
+        self.create_button("Browse", self.browse_gmail, 1, 2, "e", padx=(10, 0), pady=(10, 0))
+        self.create_button("Browse", self.browse_subject, 2, 2, "e", padx=(10, 0), pady=(10, 0))
+        self.create_button("Browse", self.browse_template, 3, 2, "e", padx=(10, 0), pady=(10, 0))
 
         # Create Send Email button
-        self.send_button = tk.Button(root, text="Send Emails", command=self.send_emails)
+        self.create_button("Send Emails", self.send_emails, 4, 0, "we", padx=(10, 0), pady=(20, 0))
 
-        # Create status label
-        self.status_label = tk.Label(root, text="Status: Idle")
-
-        # Layout using grid
-        self.contacts_label.grid(row=0, column=0, sticky="e")
-        self.contacts_button.grid(row=0, column=1)
-        self.gmail_label.grid(row=1, column=0, sticky="e")
-        self.gmail_button.grid(row=1, column=1)
-        self.subject_label.grid(row=2, column=0, sticky="e")
-        self.subject_button.grid(row=2, column=1)
-        self.template_label.grid(row=3, column=0, sticky="e")
-        self.template_button.grid(row=3, column=1)
-        self.send_button.grid(row=4, column=0, columnspan=2)
-        self.status_label.grid(row=5, column=0, columnspan=2)
+        # Create a scrolled text widget for log display
+        self.log_text = scrolledtext.ScrolledText(self.right_frame, state="disabled", width=40, height=20)
+        self.log_text.pack(fill="both", expand=True)
 
         # Initialize variables for file paths
         self.contacts_file = ""
@@ -47,70 +44,80 @@ class EmailSenderApp:
         self.subject_file = ""
         self.template_file = ""
 
+    def create_button(self, text, command, row, column, sticky, padx=None, pady=None):
+        button = tk.Button(self.left_frame, text=text, command=command)
+        button.grid(row=row, column=column, sticky=sticky, padx=padx, pady=pady)
+
+    def log(self, message):
+        self.log_text.configure(state="normal")
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.see(tk.END)  # Scroll to the end of the log
+        self.log_text.configure(state="disabled")
+
     def browse_contacts(self):
         self.contacts_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
         if self.contacts_file:
-            messagebox.showinfo("Info", "Contacts CSV selected successfully!")
+            self.log("Contacts CSV selected successfully!")
 
     def browse_gmail(self):
         self.gmail_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
         if self.gmail_file:
-            messagebox.showinfo("Info", "Gmail CSV selected successfully!")
+            self.log("Gmail CSV selected successfully!")
 
     def browse_subject(self):
         self.subject_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
         if self.subject_file:
-            messagebox.showinfo("Info", "Subject CSV selected successfully!")
+            self.log("Subject CSV selected successfully!")
 
     def browse_template(self):
         self.template_file = filedialog.askopenfilename(filetypes=[("HTML Files", "*.html")])
         if self.template_file:
-            messagebox.showinfo("Info", "Email Template HTML selected successfully!")
+            self.log("Email Template HTML selected successfully!")
 
     def send_emails(self):
         if not self.contacts_file or not self.gmail_file or not self.subject_file or not self.template_file:
             messagebox.showerror("Error", "Please select all CSV files and the Email Template HTML.")
             return
 
+        self.log("Sending emails...")
+
+        # Your email sending logic here
         try:
-            # Load data from CSV files
-            contacts_data = pd.read_csv(self.contacts_file)
-            gmail_data = pd.read_csv(self.gmail_file)
-            subject_data = pd.read_csv(self.subject_file)
+            contactsData = pd.read_csv(self.contacts_file)
+            emailData = pd.read_csv(self.gmail_file)
+            subjectData = pd.read_csv(self.subject_file)
 
-            # Load email template
-            with open(self.template_file, 'r') as template_file:
-                email_template = template_file.read()
+            for _, contact in contactsData.iterrows():
+                email_account = emailData.sample(n=1).iloc[0]
+                sender_email = email_account['email']
+                sender_password = email_account['password']
+                recipient_email = contact['email']
+                subject = random.choice(subjectData['subject'])
 
-            # Iterate through contacts and send emails
-            for _, contact in contacts_data.iterrows():
-                # Choose a random email account
-                email_account = random.choice(gmail_data.to_dict('records'))
+                with open(self.template_file, 'r') as f:
+                    email_html = f.read()
 
-                # Create an email message
+                email_html = email_html.replace('$name', contact['name'])
+
                 message = MIMEMultipart()
-                message['From'] = email_account['email']
-                message['To'] = contact['email']
-                message['Subject'] = random.choice(subject_data['subject'])
+                message['From'] = sender_email
+                message['To'] = recipient_email
+                message['Subject'] = subject
 
-                # Customize the email template
-                email_body = email_template.replace('$name', contact['name'])
+                message.attach(MIMEText(email_html, 'html'))
 
-                # Attach the email body
-                message.attach(MIMEText(email_body, 'html'))
-
-                # Connect to the email server and send the email
                 with smtplib.SMTP('smtp.gmail.com', 587) as server:
                     server.starttls()
-                    server.login(email_account['email'], email_account['password'])
-                    server.sendmail(email_account['email'], contact['email'], message.as_string())
+                    server.login(sender_email, sender_password)
+                    server.sendmail(sender_email, recipient_email, message.as_string())
 
-                print(f"Email sent to {contact['email']} successfully")
+                self.log(f"Email sent to {recipient_email} successfully")
 
-            self.status_label.config(text="Status: Emails Sent Successfully!")
+            self.log("All emails sent successfully!")
 
         except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            self.log(f"Error: {e}")
+            messagebox.showerror("Error", f"An error occurred: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
