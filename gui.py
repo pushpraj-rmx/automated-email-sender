@@ -11,42 +11,48 @@ class EmailSenderApp:
         self.root = root
         self.root.title("Email Sender App")
 
-        # Create a frame for the left side
-        self.left_frame = tk.Frame(root)
+        # Initialize StringVar variables for file paths
+        self.contacts_file_var = tk.StringVar()
+        self.gmail_file_var = tk.StringVar()
+        self.subject_file_var = tk.StringVar()
+        self.template_file_var = tk.StringVar()
+
+        # Create frames
+        self.create_left_frame()
+        self.create_right_frame()
+
+    def create_left_frame(self):
+        self.left_frame = tk.Frame(self.root)
         self.left_frame.pack(side="left", padx=20, pady=20)
 
-        # Create a frame for the right side (log display)
-        self.right_frame = tk.Frame(root)
-        self.right_frame.pack(side="right", padx=20, pady=20)
+        # Create labels and buttons
+        self.create_label("Select Contacts CSV:", 0, 0)
+        self.create_label("Select Gmail CSV:", 1, 0)
+        self.create_label("Select Subject CSV:", 2, 0)
+        self.create_label("Select Email Template HTML:", 3, 0)
 
-        # Create labels
-        tk.Label(self.left_frame, text="Select Contacts CSV:").grid(row=0, column=0, sticky="w")
-        tk.Label(self.left_frame, text="Select Gmail CSV:").grid(row=1, column=0, sticky="w")
-        tk.Label(self.left_frame, text="Select Subject CSV:").grid(row=2, column=0, sticky="w")
-        tk.Label(self.left_frame, text="Select Email Template HTML:").grid(row=3, column=0, sticky="w")
-
-        # Create buttons to select CSV files
-        self.create_button("Browse", self.browse_contacts, 0, 2, "e", padx=(10, 0), pady=(10, 0))
-        self.create_button("Browse", self.browse_gmail, 1, 2, "e", padx=(10, 0), pady=(10, 0))
-        self.create_button("Browse", self.browse_subject, 2, 2, "e", padx=(10, 0), pady=(10, 0))
-        self.create_button("Browse", self.browse_template, 3, 2, "e", padx=(10, 0), pady=(10, 0))
+        self.create_button("Browse", self.browse_contacts, 0, 2)
+        self.create_button("Browse", self.browse_gmail, 1, 2)
+        self.create_button("Browse", self.browse_subject, 2, 2)
+        self.create_button("Browse", self.browse_template, 3, 2)
 
         # Create Send Email button
-        self.create_button("Send Emails", self.send_emails, 4, 0, "we", padx=(10, 0), pady=(20, 0))
+        self.create_button("Send Emails", self.send_emails, 4, 0, padx=10)
+
+    def create_right_frame(self):
+        self.right_frame = tk.Frame(self.root)
+        self.right_frame.pack(side="right", padx=20, pady=20)
 
         # Create a scrolled text widget for log display
         self.log_text = scrolledtext.ScrolledText(self.right_frame, state="disabled", width=40, height=20)
         self.log_text.pack(fill="both", expand=True)
 
-        # Initialize variables for file paths
-        self.contacts_file = ""
-        self.gmail_file = ""
-        self.subject_file = ""
-        self.template_file = ""
+    def create_label(self, text, row, column):
+        tk.Label(self.left_frame, text=text).grid(row=row, column=column, sticky="w")
 
-    def create_button(self, text, command, row, column, sticky, padx=None, pady=None):
-        button = tk.Button(self.left_frame, text=text, command=command)
-        button.grid(row=row, column=column, sticky=sticky, padx=padx, pady=pady)
+    def create_button(self, text, command, row, column, padx=None, pady=None):
+        button = tk.Button(self.left_frame, text=text, command=command, padx=padx, pady=pady)
+        button.grid(row=row, column=column)
 
     def log(self, message):
         self.log_text.configure(state="normal")
@@ -54,47 +60,45 @@ class EmailSenderApp:
         self.log_text.see(tk.END)  # Scroll to the end of the log
         self.log_text.configure(state="disabled")
 
+    def browse_file(self, file_type, file_var):
+        file_path = filedialog.askopenfilename(filetypes=[(file_type, f"*.{file_type.lower()}")])
+        if file_path:
+            file_var.set(file_path)
+            self.log(f"{file_type} selected successfully!")
+
     def browse_contacts(self):
-        self.contacts_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if self.contacts_file:
-            self.log("Contacts CSV selected successfully!")
+        self.browse_file("CSV", self.contacts_file_var)
 
     def browse_gmail(self):
-        self.gmail_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if self.gmail_file:
-            self.log("Gmail CSV selected successfully!")
+        self.browse_file("CSV", self.gmail_file_var)
 
     def browse_subject(self):
-        self.subject_file = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if self.subject_file:
-            self.log("Subject CSV selected successfully!")
+        self.browse_file("CSV", self.subject_file_var)
 
     def browse_template(self):
-        self.template_file = filedialog.askopenfilename(filetypes=[("HTML Files", "*.html")])
-        if self.template_file:
-            self.log("Email Template HTML selected successfully!")
+        self.browse_file("HTML", self.template_file_var)
 
     def send_emails(self):
-        if not self.contacts_file or not self.gmail_file or not self.subject_file or not self.template_file:
+        if not all([self.contacts_file_var.get(), self.gmail_file_var.get(), self.subject_file_var.get(), self.template_file_var.get()]):
             messagebox.showerror("Error", "Please select all CSV files and the Email Template HTML.")
             return
 
         self.log("Sending emails...")
 
-        # Your email sending logic here
         try:
-            contactsData = pd.read_csv(self.contacts_file)
-            emailData = pd.read_csv(self.gmail_file)
-            subjectData = pd.read_csv(self.subject_file)
+            # Read CSV files
+            contacts_data = pd.read_csv(self.contacts_file_var.get())
+            email_data = pd.read_csv(self.gmail_file_var.get())
+            subject_data = pd.read_csv(self.subject_file_var.get())
 
-            for _, contact in contactsData.iterrows():
-                email_account = emailData.sample(n=1).iloc[0]
+            for _, contact in contacts_data.iterrows():
+                email_account = email_data.sample(n=1).iloc[0]
                 sender_email = email_account['email']
                 sender_password = email_account['password']
                 recipient_email = contact['email']
-                subject = random.choice(subjectData['subject'])
+                subject = random.choice(subject_data['subject'])
 
-                with open(self.template_file, 'r') as f:
+                with open(self.template_file_var.get(), 'r') as f:
                     email_html = f.read()
 
                 email_html = email_html.replace('$name', contact['name'])
