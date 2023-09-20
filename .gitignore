@@ -1,2 +1,7 @@
 plan.txt
 email_logs
+build
+dist
+archive
+gui.spec
+setup.py
