@@ -5,6 +5,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
+import datetime
+import os
 
 class EmailSenderApp:
     def __init__(self, root):
@@ -20,6 +22,15 @@ class EmailSenderApp:
         # Create frames
         self.create_left_frame()
         self.create_right_frame()
+
+        # Create a log directory if it doesn't exist
+        self.log_directory = "email_logs"
+        os.makedirs(self.log_directory, exist_ok=True)
+
+        # Create a log file with a timestamp
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+        self.log_file = os.path.join(self.log_directory, f"email_log_{timestamp}.txt")
 
     def create_left_frame(self):
         self.left_frame = tk.Frame(self.root)
@@ -91,31 +102,45 @@ class EmailSenderApp:
             email_data = pd.read_csv(self.gmail_file_var.get())
             subject_data = pd.read_csv(self.subject_file_var.get())
 
-            for _, contact in contacts_data.iterrows():
-                email_account = email_data.sample(n=1).iloc[0]
-                sender_email = email_account['email']
-                sender_password = email_account['password']
-                recipient_email = contact['email']
-                subject = random.choice(subject_data['subject'])
+            # Create a new log file with a timestamp for this run
+            now = datetime.datetime.now()
+            timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+            self.log_file = os.path.join(self.log_directory, f"email_log_{timestamp}.txt")
 
-                with open(self.template_file_var.get(), 'r') as f:
-                    email_html = f.read()
+            with open(self.log_file, 'w') as log:
+                for _, contact in contacts_data.iterrows():
+                    try:
+                        email_account = email_data.sample(n=1).iloc[0]
+                        sender_email = email_account['email']
+                        sender_password = email_account['password']
+                        recipient_email = contact['email']
+                        subject = random.choice(subject_data['subject'])
 
-                email_html = email_html.replace('$name', contact['name'])
+                        with open(self.template_file_var.get(), 'r') as f:
+                            email_html = f.read()
 
-                message = MIMEMultipart()
-                message['From'] = sender_email
-                message['To'] = recipient_email
-                message['Subject'] = subject
+                        email_html = email_html.replace('$name', contact['name'])
 
-                message.attach(MIMEText(email_html, 'html'))
+                        message = MIMEMultipart()
+                        message['From'] = sender_email
+                        message['To'] = recipient_email
+                        message['Subject'] = subject
 
-                with smtplib.SMTP('smtp.gmail.com', 587) as server:
-                    server.starttls()
-                    server.login(sender_email, sender_password)
-                    server.sendmail(sender_email, recipient_email, message.as_string())
+                        message.attach(MIMEText(email_html, 'html'))
 
-                self.log(f"Email sent to {recipient_email} successfully")
+                        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                            server.starttls()
+                            server.login(sender_email, sender_password)
+                            server.sendmail(sender_email, recipient_email, message.as_string())
+
+                        self.log(f"Email sent to {recipient_email} successfully")
+
+                        # Log the successful email in the log file
+                        log.write(f"Sent to {recipient_email}: {subject}\n")
+
+                    except Exception as e:
+                        # Log the failed email in the log file
+                        log.write(f"Failed to send to {recipient_email}: {e}\n")
 
             self.log("All emails sent successfully!")
 
